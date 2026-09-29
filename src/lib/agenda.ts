@@ -31,7 +31,7 @@ async function ocupacaoDoDia(dataISO: string, ignorarId?: number) {
 }
 
 function livre(
-  marcados: { profissionalId: number; inicio: Date; fim: Date }[],
+  marcados: Marcado[],
   profissionalId: number,
   inicio: Date,
   fim: Date,
@@ -39,31 +39,68 @@ function livre(
   return !marcados.some((a) => a.profissionalId === profissionalId && a.inicio < fim && a.fim > inicio);
 }
 
-// Horários do dia com pelo menos um profissional livre. Horários passados não aparecem.
-export async function horariosDisponiveis(servicoId: number, dataISO: string, ignorarId?: number) {
-  const servico = await buscarServico(servicoId);
+type Marcado = { profissionalId: number; inicio: Date; fim: Date };
+
+// Um serviço de duracaoMin cabe se começa num horário da grade, no futuro, dentro do expediente e com o profissional livre
+function cabe(
+  marcados: Marcado[],
+  profissionalId: number,
+  dataISO: string,
+  horario: string,
+  duracaoMin: number,
+  exp: { abre: string; fecha: string },
+) {
+  const m = minutos(horario);
+  const abre = minutos(exp.abre);
+  if (m < abre || m + duracaoMin > minutos(exp.fecha) || (m - abre) % INTERVALO_SLOT_MIN !== 0) return false;
+  const inicio = paraDate(dataISO, horario);
+  if (inicio <= new Date()) return false;
+  return livre(marcados, profissionalId, inicio, new Date(inicio.getTime() + duracaoMin * 60_000));
+}
+
+async function servicosAtivos() {
+  return db.select().from(servicos).where(eq(servicos.ativo, true));
+}
+
+// Horários do dia em que o profissional tem livre ao menos o serviço mais curto. Horários passados não aparecem.
+export async function horariosDisponiveis(profissionalId: number, dataISO: string, ignorarId?: number) {
   const exp = EXPEDIENTE[diaDaSemana(dataISO)];
-  if (!servico || !exp) return [];
+  const lista = await servicosAtivos();
+  if (!exp || !lista.length) return [];
 
   const { pros, marcados } = await ocupacaoDoDia(dataISO, ignorarId);
-  const agora = new Date();
-  const horarios: string[] = [];
+  if (!pros.some((p) => p.id === profissionalId)) return [];
+  const menor = Math.min(...lista.map((s) => s.duracaoMin));
 
-  for (let m = minutos(exp.abre); m + servico.duracaoMin <= minutos(exp.fecha); m += INTERVALO_SLOT_MIN) {
-    const inicio = paraDate(dataISO, hm(m));
-    if (inicio <= agora) continue;
-    const fim = new Date(inicio.getTime() + servico.duracaoMin * 60_000);
-    if (pros.some((p) => livre(marcados, p.id, inicio, fim))) horarios.push(hm(m));
+  const horarios: string[] = [];
+  for (let m = minutos(exp.abre); m + menor <= minutos(exp.fecha); m += INTERVALO_SLOT_MIN) {
+    if (cabe(marcados, profissionalId, dataISO, hm(m), menor, exp)) horarios.push(hm(m));
   }
   return horarios;
 }
 
-export async function profissionaisDisponiveis(servicoId: number, dataISO: string, horario: string, ignorarId?: number) {
-  const servico = await buscarServico(servicoId);
-  if (!servico || !(await horariosDisponiveis(servicoId, dataISO, ignorarId)).includes(horario)) return [];
+// Ids dos serviços que cabem a partir do horário escolhido com esse profissional
+export async function servicosDisponiveis(profissionalId: number, dataISO: string, horario: string, ignorarId?: number) {
+  const exp = EXPEDIENTE[diaDaSemana(dataISO)];
+  if (!exp) return [];
+  const [lista, { pros, marcados }] = await Promise.all([servicosAtivos(), ocupacaoDoDia(dataISO, ignorarId)]);
+  if (!pros.some((p) => p.id === profissionalId)) return [];
+  return lista.filter((s) => cabe(marcados, profissionalId, dataISO, horario, s.duracaoMin, exp)).map((s) => s.id);
+}
 
+// Profissional, se ele puder fazer esse serviço nesse horário
+export async function profissionalDisponivel(
+  servicoId: number,
+  profissionalId: number,
+  dataISO: string,
+  horario: string,
+  ignorarId?: number,
+) {
+  const servico = await buscarServico(servicoId);
+  const exp = EXPEDIENTE[diaDaSemana(dataISO)];
+  if (!servico || !exp) return null;
   const { pros, marcados } = await ocupacaoDoDia(dataISO, ignorarId);
-  const inicio = paraDate(dataISO, horario);
-  const fim = new Date(inicio.getTime() + servico.duracaoMin * 60_000);
-  return pros.filter((p) => livre(marcados, p.id, inicio, fim)).map((p) => ({ id: p.id, nome: p.nome }));
+  const pro = pros.find((p) => p.id === profissionalId);
+  if (!pro || !cabe(marcados, pro.id, dataISO, horario, servico.duracaoMin, exp)) return null;
+  return { id: pro.id, nome: pro.nome };
 }

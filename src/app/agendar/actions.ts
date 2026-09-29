@@ -4,21 +4,21 @@ import { and, eq, gt } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { agendamentos } from "@/db/schema";
-import { horariosDisponiveis, profissionaisDisponiveis } from "@/lib/agenda";
+import { horariosDisponiveis, servicosDisponiveis } from "@/lib/agenda";
 import { dataValida, horaValida, salvarAgendamento, type DadosAgendamento } from "@/lib/agendamento";
 import { exigirCliente } from "@/lib/sessao";
 import { avisarProfissional } from "@/lib/avisos";
 
-export async function carregarHorarios(servicoId: number, dataISO: string) {
+export async function carregarHorarios(profissionalId: number, dataISO: string) {
   await exigirCliente();
   if (!dataValida(dataISO)) return [];
-  return horariosDisponiveis(servicoId, dataISO);
+  return horariosDisponiveis(profissionalId, dataISO);
 }
 
-export async function carregarProfissionais(servicoId: number, dataISO: string, horario: string) {
+export async function carregarServicos(profissionalId: number, dataISO: string, horario: string) {
   await exigirCliente();
   if (!dataValida(dataISO) || !horaValida(horario)) return [];
-  return profissionaisDisponiveis(servicoId, dataISO, horario);
+  return servicosDisponiveis(profissionalId, dataISO, horario);
 }
 
 export async function confirmarAgendamento(input: DadosAgendamento) {

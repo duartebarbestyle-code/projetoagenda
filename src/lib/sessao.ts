@@ -3,9 +3,15 @@ import { notFound, redirect } from "next/navigation";
 import { eq } from "drizzle-orm";
 import { auth } from "./auth";
 import { db } from "@/db";
-import { clientes } from "@/db/schema";
+import { clientes, user } from "@/db/schema";
 
 export async function sessaoAtual() {
+  // Só em desenvolvimento: DEV_LOGIN=<id do usuário> no .env.local entra direto, sem tela de login
+  const dev = process.env.NODE_ENV === "development" ? process.env.DEV_LOGIN : undefined;
+  if (dev) {
+    const [u] = await db.select().from(user).where(eq(user.id, dev));
+    if (u) return { user: u };
+  }
   return auth.api.getSession({ headers: await headers() });
 }
 

@@ -1,8 +1,8 @@
 "use client";
 
 import { startTransition, useActionState, useState } from "react";
-import { upload } from "@vercel/blob/client";
 import { ACEITA_MIDIA, erroMidia, MAX_SEGUNDOS } from "@/lib/midia";
+import { enviarParaBlob } from "@/lib/upload";
 import type { Estado } from "../cadastros-actions";
 
 // Duração lida pelo próprio navegador
@@ -23,7 +23,6 @@ function duracao(arquivo: File) {
   });
 }
 
-// Com Vercel Blob, o arquivo sobe direto do navegador e o formulário manda só a URL
 export function EstiloForm({
   acao,
   botao,
@@ -55,9 +54,7 @@ export function EstiloForm({
       if (blob) {
         setEnviando(true);
         try {
-          const r = await upload(`portfolio/${arquivo.name}`, arquivo, { access: "public", handleUploadUrl: "/api/upload" });
-          f.set("midiaUrl", r.url);
-          f.delete("midia");
+          await enviarParaBlob(f, arquivo, "portfolio");
         } catch {
           return setErro("Falha ao enviar o arquivo.");
         } finally {

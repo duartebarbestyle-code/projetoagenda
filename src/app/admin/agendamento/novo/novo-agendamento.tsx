@@ -9,7 +9,7 @@ import {
   cadastrarRapido,
   criarParaCliente,
   horariosAdmin,
-  profissionaisAdmin,
+  servicosAdmin,
   type ClienteBusca,
 } from "../../agendamento-actions";
 
@@ -53,7 +53,7 @@ export function NovoAgendamento(props: Props) {
     () =>
       cliente && {
         carregarHorarios: horariosAdmin.bind(null, null),
-        carregarProfissionais: profissionaisAdmin.bind(null, null),
+        carregarServicos: servicosAdmin.bind(null, null),
         confirmarAgendamento: criarParaCliente.bind(null, cliente.userId),
       },
     [cliente],

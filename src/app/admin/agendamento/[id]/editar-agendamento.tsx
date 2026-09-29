@@ -3,7 +3,7 @@
 import { useMemo, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Wizard } from "@/app/agendar/wizard";
-import { cancelarPeloAdmin, editarAgendamento, horariosAdmin, profissionaisAdmin } from "../../agendamento-actions";
+import { cancelarPeloAdmin, editarAgendamento, horariosAdmin, servicosAdmin } from "../../agendamento-actions";
 
 type Props = Omit<React.ComponentProps<typeof Wizard>, "acoes" | "destino" | "textoConfirmar"> & { id: number };
 
@@ -13,7 +13,7 @@ export function EditarAgendamento({ id, ...props }: Props) {
   const acoes = useMemo(
     () => ({
       carregarHorarios: horariosAdmin.bind(null, id),
-      carregarProfissionais: profissionaisAdmin.bind(null, id),
+      carregarServicos: servicosAdmin.bind(null, id),
       confirmarAgendamento: editarAgendamento.bind(null, id),
     }),
     [id],

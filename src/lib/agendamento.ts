@@ -1,7 +1,7 @@
 import { and, eq, gt, lt, ne } from "drizzle-orm";
 import { db } from "@/db";
 import { agendamentos, estilos } from "@/db/schema";
-import { buscarServico, profissionaisDisponiveis } from "./agenda";
+import { buscarServico, profissionalDisponivel } from "./agenda";
 import { avisarProfissional } from "./avisos";
 import { avisarCliente } from "./aviso-cliente";
 import { fmtData, fmtHora, paraDate } from "./time";
@@ -31,8 +31,7 @@ export async function salvarAgendamento(opts: {
   const servico = await buscarServico(input.servicoId);
   if (!servico || !DATA.test(input.data) || !HORA.test(input.horario)) return { ok: false, erro: "Dados inválidos." };
 
-  const livres = await profissionaisDisponiveis(input.servicoId, input.data, input.horario, editarId);
-  const pro = livres.find((p) => p.id === input.profissionalId);
+  const pro = await profissionalDisponivel(input.servicoId, input.profissionalId, input.data, input.horario, editarId);
   if (!pro) return { ok: false, erro: "Esse horário não está mais disponível." };
 
   let estiloId: number | null = null;

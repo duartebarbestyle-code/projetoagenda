@@ -9,7 +9,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { estilos, profissionais, servicos } from "@/db/schema";
 import { exigirAdmin } from "@/lib/sessao";
-import { erroMidia, TIPOS_MIDIA } from "@/lib/midia";
+import { ehVideo, erroMidia, TIPOS_MIDIA, type PastaMidia } from "@/lib/midia";
 import { normalizarCelular } from "@/lib/sms";
 
 export type Estado = { erro?: string; ok?: boolean };
@@ -84,17 +84,25 @@ export async function criarProfissional(_: Estado, f: FormData): Promise<Estado>
   await exigirAdmin();
   const r = lerProfissional(f);
   if (!r.dados) return { erro: r.erro };
-  await db.insert(profissionais).values(r.dados);
+  const m = await lerMidia(f, "profissionais");
+  if ("erro" in m) return { erro: m.erro };
+  await db.insert(profissionais).values({ ...r.dados, fotoUrl: m.url });
   atualizar("/admin/profissionais", "/agendar");
   return { ok: true };
 }
 
+// Sem arquivo novo, a foto atual continua
 export async function editarProfissional(id: number, _: Estado, f: FormData): Promise<Estado> {
   await exigirAdmin();
   const r = lerProfissional(f);
   if (!r.dados) return { erro: r.erro };
-  await db.update(profissionais).set(r.dados).where(eq(profissionais.id, id));
-  atualizar("/admin/profissionais", "/admin");
+  const m = await lerMidia(f, "profissionais");
+  if ("erro" in m) return { erro: m.erro };
+  await db
+    .update(profissionais)
+    .set({ ...r.dados, ...(m.url && { fotoUrl: m.url }) })
+    .where(eq(profissionais.id, id));
+  atualizar("/admin/profissionais", "/admin", "/agendar");
   return { ok: true };
 }
 
@@ -106,39 +114,41 @@ export async function alternarProfissional(id: number, ativo: boolean) {
 
 // Portfólio
 
-// Vercel Blob em produção; sem token, salva em public/portfolio (só funciona local)
-async function salvarArquivo(arquivo: File) {
+// Vercel Blob em produção; sem token, salva em public/<pasta> (só funciona local)
+async function salvarArquivo(arquivo: File, pasta: PastaMidia) {
   const ext = TIPOS_MIDIA[arquivo.type as keyof typeof TIPOS_MIDIA];
   const nome = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
   if (process.env.BLOB_READ_WRITE_TOKEN) {
-    const blob = await put(`portfolio/${nome}`, arquivo, { access: "public", contentType: arquivo.type });
+    const blob = await put(`${pasta}/${nome}`, arquivo, { access: "public", contentType: arquivo.type });
     return blob.url;
   }
-  const pasta = path.join(process.cwd(), "public", "portfolio");
-  await mkdir(pasta, { recursive: true });
-  await writeFile(path.join(pasta, nome), Buffer.from(await arquivo.arrayBuffer()));
-  return `/portfolio/${nome}`;
+  const dir = path.join(process.cwd(), "public", pasta);
+  await mkdir(dir, { recursive: true });
+  await writeFile(path.join(dir, nome), Buffer.from(await arquivo.arrayBuffer()));
+  return `/${pasta}/${nome}`;
 }
 
 // Mídia vem como arquivo (local) ou como URL já enviada pelo navegador ao Vercel Blob
-async function lerMidia(f: FormData): Promise<{ url: string | null } | { erro: string }> {
+async function lerMidia(f: FormData, pasta: PastaMidia): Promise<{ url: string | null } | { erro: string }> {
+  const soFoto = pasta === "profissionais";
   const url = texto(f, "midiaUrl");
   if (url) {
     if (!/^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\//.test(url)) return { erro: "Arquivo inválido" };
+    if (soFoto && ehVideo(url)) return { erro: "Use uma foto (JPG, PNG, WEBP)" };
     return { url };
   }
   const arquivo = f.get("midia");
   if (!(arquivo instanceof File) || arquivo.size === 0) return { url: null };
-  const erro = erroMidia(arquivo.type, arquivo.size);
+  const erro = erroMidia(arquivo.type, arquivo.size, soFoto);
   if (erro) return { erro };
-  return { url: await salvarArquivo(arquivo) };
+  return { url: await salvarArquivo(arquivo, pasta) };
 }
 
 export async function criarEstilo(_: Estado, f: FormData): Promise<Estado> {
   await exigirAdmin();
   const nome = texto(f, "nome");
   if (nome.length < 2) return { erro: "Informe o nome do estilo" };
-  const m = await lerMidia(f);
+  const m = await lerMidia(f, "portfolio");
   if ("erro" in m) return { erro: m.erro };
   await db.insert(estilos).values({ nome, imagemUrl: m.url });
   atualizar("/admin/portfolio", "/portfolio", "/agendar");
@@ -149,7 +159,7 @@ export async function editarEstilo(id: number, _: Estado, f: FormData): Promise<
   await exigirAdmin();
   const nome = texto(f, "nome");
   if (nome.length < 2) return { erro: "Informe o nome do estilo" };
-  const m = await lerMidia(f);
+  const m = await lerMidia(f, "portfolio");
   if ("erro" in m) return { erro: m.erro };
   await db
     .update(estilos)

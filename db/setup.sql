@@ -85,10 +85,12 @@ CREATE TABLE IF NOT EXISTS servicos (
 );
 
 -- telefone: WhatsApp do barbeiro (+55...), recebe a agenda do dia e os avisos
+-- foto_url: foto mostrada ao cliente na escolha do profissional
 CREATE TABLE IF NOT EXISTS profissionais (
   id serial PRIMARY KEY,
   nome text NOT NULL,
   telefone text,
+  foto_url text,
   ativo boolean NOT NULL DEFAULT true
 );
 
@@ -146,6 +148,7 @@ ALTER TABLE clientes ALTER COLUMN email DROP NOT NULL, ALTER COLUMN cep DROP NOT
   ALTER COLUMN numero DROP NOT NULL, ALTER COLUMN bairro DROP NOT NULL, ALTER COLUMN cidade DROP NOT NULL,
   ALTER COLUMN uf DROP NOT NULL;
 ALTER TABLE profissionais ADD COLUMN IF NOT EXISTS telefone text;
+ALTER TABLE profissionais ADD COLUMN IF NOT EXISTS foto_url text;
 ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS estilo_id integer REFERENCES estilos(id);
 ALTER TABLE agendamentos ADD COLUMN IF NOT EXISTS observacao text;
 

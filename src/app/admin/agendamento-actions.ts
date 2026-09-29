@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { agendamentos, clientes, servicos, user } from "@/db/schema";
 import { cpfValido } from "@/lib/cpf";
-import { horariosDisponiveis, profissionaisDisponiveis } from "@/lib/agenda";
+import { horariosDisponiveis, servicosDisponiveis } from "@/lib/agenda";
 import { dataValida, horaValida, salvarAgendamento, type DadosAgendamento } from "@/lib/agendamento";
 import { exigirAdmin } from "@/lib/sessao";
 import { normalizarCelular } from "@/lib/sms";
@@ -75,16 +75,16 @@ export async function cadastrarRapido(dados: {
   return { ok: true, cliente: { userId, nome, cpf, celular } };
 }
 
-export async function horariosAdmin(ignorarId: number | null, servicoId: number, data: string) {
+export async function horariosAdmin(ignorarId: number | null, profissionalId: number, data: string) {
   await exigirAdmin();
   if (!dataValida(data)) return [];
-  return horariosDisponiveis(servicoId, data, ignorarId ?? undefined);
+  return horariosDisponiveis(profissionalId, data, ignorarId ?? undefined);
 }
 
-export async function profissionaisAdmin(ignorarId: number | null, servicoId: number, data: string, horario: string) {
+export async function servicosAdmin(ignorarId: number | null, profissionalId: number, data: string, horario: string) {
   await exigirAdmin();
   if (!dataValida(data) || !horaValida(horario)) return [];
-  return profissionaisDisponiveis(servicoId, data, horario, ignorarId ?? undefined);
+  return servicosDisponiveis(profissionalId, data, horario, ignorarId ?? undefined);
 }
 
 async function existeCliente(userId: string) {

@@ -1,6 +1,6 @@
 # Agenda Barbearia
 
-Agendamento online no estilo Booksy: login com Google ou celular (SMS), cadastro no primeiro acesso, escolha de serviço → dia → horário → profissional, lembrete por SMS.
+Agendamento online no estilo Booksy: login com Google ou celular (SMS), cadastro no primeiro acesso, escolha de profissional → dia → horário → serviço, lembrete por SMS.
 
 Stack: Next.js 16 · Better Auth · Neon Postgres (Vercel) · Drizzle · Twilio · Tailwind (design system HashiCorp).
 
@@ -18,7 +18,7 @@ Stack: Next.js 16 · Better Auth · Neon Postgres (Vercel) · Drizzle · Twilio 
 | `/entrar` | Google ou celular + código SMS, links para cadastro e recuperar acesso |
 | `/recuperar` | CPF → código por SMS ou e-mail → entra na conta |
 | `/cadastro` | Nome, sobrenome, e-mail, CPF, celular, endereço (CEP preenche via ViaCEP) → tabela `clientes` |
-| `/agendar` | Serviço (+ estilo e observação opcionais nos cortes) → dia → horário → profissional → tabela `agendamentos` |
+| `/agendar` | Profissional → dia → horário → serviço (+ estilo e observação opcionais nos cortes) → tabela `agendamentos` |
 | `/portfolio` | Estilos de corte (tabela `estilos`, imagens em `public/portfolio/`) |
 | `/meus-agendamentos` | Próximos horários do cliente, com cancelamento |
 | `/admin` | Painel do barbeiro (cadastro com `tipo = 'admin'`): agenda do dia, marcar realizado/faltou, adicionar serviços extras |

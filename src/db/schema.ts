@@ -103,6 +103,7 @@ export const profissionais = pgTable("profissionais", {
   id: serial("id").primaryKey(),
   nome: text("nome").notNull(),
   telefone: text("telefone"),
+  fotoUrl: text("foto_url"),
   ativo: boolean("ativo").notNull().default(true),
 });
 

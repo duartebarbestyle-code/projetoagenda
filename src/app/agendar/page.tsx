@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { estilos, servicos } from "@/db/schema";
+import { estilos, profissionais, servicos } from "@/db/schema";
 import { DIAS_A_FRENTE, EXPEDIENTE } from "@/lib/config";
 import { exigirClienteComum } from "@/lib/sessao";
 import { dataLocal, diaDaSemana, somarDias } from "@/lib/time";
@@ -8,13 +8,18 @@ import { Wizard } from "./wizard";
 
 export default async function Agendar() {
   const { cliente } = await exigirClienteComum();
-  const [lista, listaEstilos] = await Promise.all([
+  const [lista, listaEstilos, pros] = await Promise.all([
     db.select().from(servicos).where(eq(servicos.ativo, true)).orderBy(servicos.id),
     db
       .select({ id: estilos.id, nome: estilos.nome, imagemUrl: estilos.imagemUrl })
       .from(estilos)
       .where(eq(estilos.ativo, true))
       .orderBy(estilos.id),
+    db
+      .select({ id: profissionais.id, nome: profissionais.nome, fotoUrl: profissionais.fotoUrl })
+      .from(profissionais)
+      .where(eq(profissionais.ativo, true))
+      .orderBy(profissionais.id),
   ]);
 
   const hoje = dataLocal();
@@ -36,6 +41,7 @@ export default async function Agendar() {
           permiteEstilo,
         }))}
         estilos={listaEstilos}
+        profissionais={pros}
         dias={dias}
       />
     </div>
