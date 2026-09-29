@@ -34,5 +34,9 @@ export const fmtHora = (d: Date) =>
 export const fmtData = (d: Date) =>
   new Intl.DateTimeFormat("pt-BR", { timeZone: FUSO, weekday: "short", day: "2-digit", month: "2-digit" }).format(d);
 
+// "30/09/2026"
+export const fmtDataCompleta = (d: Date) =>
+  new Intl.DateTimeFormat("pt-BR", { timeZone: FUSO, day: "2-digit", month: "2-digit", year: "numeric" }).format(d);
+
 export const fmtPreco = (centavos: number) =>
   (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

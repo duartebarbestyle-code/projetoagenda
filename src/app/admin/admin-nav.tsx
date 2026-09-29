@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 
 const ABAS = [
   { href: "/admin", rotulo: "Agenda" },
+  { href: "/admin/clientes", rotulo: "Clientes" },
   { href: "/admin/servicos", rotulo: "Serviços" },
   { href: "/admin/profissionais", rotulo: "Profissionais" },
   { href: "/admin/portfolio", rotulo: "Portfólio" },
