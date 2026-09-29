@@ -4,7 +4,7 @@ import { agendamentos, estilos } from "@/db/schema";
 import { buscarServico, profissionalDisponivel } from "./agenda";
 import { avisarProfissional } from "./avisos";
 import { avisarCliente } from "./aviso-cliente";
-import { fmtData, fmtHora, paraDate } from "./time";
+import { paraDate } from "./time";
 
 export type DadosAgendamento = {
   servicoId: number;
@@ -21,7 +21,7 @@ const HORA = /^\d{2}:\d{2}$/;
 export const dataValida = (d: string) => DATA.test(d);
 export const horaValida = (h: string) => HORA.test(h);
 
-// Cria (ou, com editarId, altera) um agendamento validando disponibilidade. Avisa o cliente por SMS.
+// Cria (ou, com editarId, altera) um agendamento validando disponibilidade. Avisa o cliente por e-mail ou WhatsApp.
 export async function salvarAgendamento(opts: {
   userId: string;
   input: DadosAgendamento;
@@ -94,11 +94,6 @@ export async function salvarAgendamento(opts: {
     await avisarProfissional("novo", agora);
   } else await avisarProfissional("alterado", agora, anterior.inicio.getTime() !== inicio.getTime() ? anterior.inicio : undefined);
 
-  const acao = editarId ? "alterado" : "confirmado";
-  await avisarCliente(
-    userId,
-    `horário ${acao}`,
-    `${servico.nome} ${acao} para ${fmtData(inicio)} às ${fmtHora(inicio)} com ${pro.nome}.`,
-  );
+  await avisarCliente(userId, editarId ? "alterado" : "confirmado", { servico: servico.nome, inicio, profissional: pro.nome });
   return { ok: true };
 }

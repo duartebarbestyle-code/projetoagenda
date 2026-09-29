@@ -10,7 +10,7 @@ import { db } from "@/db";
 import { estilos, profissionais, servicos } from "@/db/schema";
 import { exigirAdmin } from "@/lib/sessao";
 import { ehVideo, erroMidia, TIPOS_MIDIA, type PastaMidia } from "@/lib/midia";
-import { normalizarCelular } from "@/lib/sms";
+import { normalizarCelular } from "@/lib/celular";
 
 export type Estado = { erro?: string; ok?: boolean };
 

@@ -3,10 +3,9 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { createAuthMiddleware } from "better-auth/api";
 import { setSessionCookie } from "better-auth/cookies";
-import { emailOTP, phoneNumber } from "better-auth/plugins";
+import { emailOTP } from "better-auth/plugins";
 import { db } from "@/db";
 import * as schema from "@/db/schema";
-import { enviarSms } from "./sms";
 import { enviarEmail } from "./email";
 import { BARBEARIA } from "./config";
 
@@ -29,20 +28,10 @@ export const auth = betterAuth({
     },
   },
   plugins: [
-    phoneNumber({
-      phoneNumberValidator: (n) => /^\+55\d{11}$/.test(n),
-      sendOTP: ({ phoneNumber, code }) =>
-        enviarSms(phoneNumber, `${BARBEARIA}: seu código de acesso é ${code}`),
-      signUpOnVerification: {
-        getTempEmail: (n) => `${n.replace(/\D/g, "")}@celular.local`,
-        getTempName: (n) => n,
-      },
-    }),
-    // Só para recuperar acesso de quem já tem conta
+    // Login por código no e-mail; e-mail novo cria a conta (o cadastro é completado em /cadastro)
     emailOTP({
-      disableSignUp: true,
       sendVerificationOTP: ({ email, otp }) =>
-        enviarEmail(email, `${BARBEARIA}: código de acesso`, `Seu código para recuperar o acesso é ${otp}.`),
+        enviarEmail(email, `${BARBEARIA}: código de acesso`, `Seu código de acesso é ${otp}. Ele vale por 5 minutos.`),
     }),
     nextCookies(),
   ],

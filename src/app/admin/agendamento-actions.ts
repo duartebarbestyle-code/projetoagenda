@@ -8,10 +8,9 @@ import { cpfValido } from "@/lib/cpf";
 import { horariosDisponiveis, servicosDisponiveis } from "@/lib/agenda";
 import { dataValida, horaValida, salvarAgendamento, type DadosAgendamento } from "@/lib/agendamento";
 import { exigirAdmin } from "@/lib/sessao";
-import { normalizarCelular } from "@/lib/sms";
+import { normalizarCelular } from "@/lib/celular";
 import { avisarCliente } from "@/lib/aviso-cliente";
 import { avisarProfissional } from "@/lib/avisos";
-import { fmtData, fmtHora } from "@/lib/time";
 
 export type ClienteBusca = { userId: string; nome: string; cpf: string; celular: string };
 
@@ -35,8 +34,8 @@ export async function buscarClientes(termo: string): Promise<ClienteBusca[]> {
   return lista.map((c) => ({ userId: c.userId, nome: `${c.nome} ${c.sobrenome}`, cpf: c.cpf, celular: c.celular }));
 }
 
-// Cliente que chegou sem conta: cria o login (pelo celular) e o cadastro mínimo.
-// Quando ele entrar com esse celular, cai nesta conta e completa e-mail e endereço.
+// Cliente que chegou sem conta: cria a conta e o cadastro mínimo; avisos vão por WhatsApp.
+// Quando ele criar a conta pelo e-mail com o mesmo CPF e celular, assume esta (ver cadastro/actions).
 export async function cadastrarRapido(dados: {
   nomeCompleto: string;
   cpf: string;
@@ -71,7 +70,7 @@ export async function cadastrarRapido(dados: {
       phoneNumber: celular,
       phoneNumberVerified: false,
     });
-  await db.insert(clientes).values({ userId, nome: primeiro, sobrenome: resto.join(" "), cpf, celular });
+  await db.insert(clientes).values({ userId, nome: primeiro, sobrenome: resto.join(" "), cpf, celular, aviso: "whatsapp" });
   return { ok: true, cliente: { userId, nome, cpf, celular } };
 }
 
@@ -124,11 +123,7 @@ export async function cancelarPeloAdmin(id: number) {
   if (a) {
     await avisarProfissional("cancelado", a);
     const [s] = await db.select({ nome: servicos.nome }).from(servicos).where(eq(servicos.id, a.servicoId));
-    await avisarCliente(
-      a.userId,
-      "horário cancelado",
-      `seu horário de ${s?.nome ?? "atendimento"} em ${fmtData(a.inicio)} às ${fmtHora(a.inicio)} foi cancelado.`,
-    );
+    await avisarCliente(a.userId, "cancelado", { servico: s?.nome ?? "atendimento", inicio: a.inicio });
   }
   revalidatePath("/admin");
 }

@@ -7,7 +7,7 @@ import { salvarCadastro, type EstadoCadastro } from "./actions";
 
 type Inicial = Partial<Record<string, string | null>>;
 
-export function CadastroForm({ inicial, celularFixo }: { inicial: Inicial; celularFixo: boolean }) {
+export function CadastroForm({ inicial, emailFixo }: { inicial: Inicial; emailFixo: boolean }) {
   const [estado, acao, pendente] = useActionState<EstadoCadastro, FormData>(salvarCadastro, {});
 
   const [avisoCep, setAvisoCep] = useState("");
@@ -67,13 +67,12 @@ export function CadastroForm({ inicial, celularFixo }: { inicial: Inicial; celul
   return (
     <form action={acao} className="card grid grid-cols-6 gap-4">
       {campo("nomeCompleto", "Nome completo", { className: "col-span-6", autoComplete: "name" })}
-      {campo("email", "E-mail", { className: "col-span-6", type: "email", autoComplete: "email" })}
+      {campo("email", "E-mail", { className: "col-span-6", type: "email", autoComplete: "email", readOnly: emailFixo })}
       {campo("cpf", "CPF", { className: "col-span-3", inputMode: "numeric", placeholder: "000.000.000-00", mascara: mascaraCpf })}
-      {campo("celular", "Celular (para lembretes)", {
+      {campo("celular", "Celular (WhatsApp)", {
         className: "col-span-3",
         inputMode: "tel",
         placeholder: "(11) 91234-5678",
-        readOnly: celularFixo,
         mascara: mascaraCelular,
       })}
       {campo("cep", "CEP", {
@@ -96,8 +95,8 @@ export function CadastroForm({ inicial, celularFixo }: { inicial: Inicial; celul
         <div className="flex gap-3">
           {(
             [
-              ["sms", "SMS"],
               ["email", "E-mail"],
+              ["whatsapp", "WhatsApp"],
             ] as const
           ).map(([valor, rotulo]) => (
             <label key={valor} className="option flex cursor-pointer items-center gap-2 py-2 has-[:checked]:border-signal has-[:checked]:bg-cobalt/20">
@@ -105,7 +104,7 @@ export function CadastroForm({ inicial, celularFixo }: { inicial: Inicial; celul
                 type="radio"
                 name="aviso"
                 value={valor}
-                defaultChecked={(estado.valores?.aviso ?? inicial.aviso ?? "sms") === valor}
+                defaultChecked={(estado.valores?.aviso ?? inicial.aviso ?? "email") === valor}
                 className="accent-cobalt"
               />
               {rotulo}

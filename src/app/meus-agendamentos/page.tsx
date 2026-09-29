@@ -49,7 +49,7 @@ export default async function MeusAgendamentos({ searchParams }: PageProps<"/meu
 
       {novo && aba === "agendados" && (
         <p className="mb-6 rounded-md border border-cobalt bg-cobalt/15 px-4 py-3 text-[15px]">
-          Agendamento confirmado. Você vai receber um lembrete por SMS.
+          Agendamento confirmado. Você vai receber a confirmação e um lembrete por e-mail ou WhatsApp, como escolheu no cadastro.
         </p>
       )}
 

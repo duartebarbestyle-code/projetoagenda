@@ -2,7 +2,6 @@ import { and, eq, gt, isNull, lt } from "drizzle-orm";
 import { db } from "@/db";
 import { agendamentos, clientes, profissionais, servicos } from "@/db/schema";
 import { avisarCliente } from "@/lib/aviso-cliente";
-import { fmtData, fmtHora } from "@/lib/time";
 
 // Chamado pelo Vercel Cron (vercel.json). Envia lembrete para quem tem horário
 // nas próximas LEMBRETE_HORAS e ainda não foi avisado.
@@ -21,7 +20,6 @@ export async function GET(req: Request) {
       inicio: agendamentos.inicio,
       servico: servicos.nome,
       profissional: profissionais.nome,
-      nome: clientes.nome,
       userId: agendamentos.userId,
     })
     .from(agendamentos)
@@ -40,11 +38,7 @@ export async function GET(req: Request) {
   let enviados = 0;
   for (const a of pendentes) {
     try {
-      await avisarCliente(
-        a.userId,
-        "lembrete do seu horário",
-        `lembrete, ${a.nome}! ${a.servico} ${fmtData(a.inicio)} às ${fmtHora(a.inicio)} com ${a.profissional}.`,
-      );
+      await avisarCliente(a.userId, "lembrete", { servico: a.servico, inicio: a.inicio, profissional: a.profissional });
       await db.update(agendamentos).set({ lembreteEnviadoEm: new Date() }).where(eq(agendamentos.id, a.id));
       enviados++;
     } catch (e) {

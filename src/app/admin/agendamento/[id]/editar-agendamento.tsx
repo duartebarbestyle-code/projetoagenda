@@ -20,7 +20,7 @@ export function EditarAgendamento({ id, ...props }: Props) {
   );
 
   function cancelar() {
-    if (!confirm("Cancelar este agendamento? O cliente recebe um SMS avisando.")) return;
+    if (!confirm("Cancelar este agendamento? O cliente recebe um aviso por e-mail ou WhatsApp.")) return;
     iniciar(async () => {
       await cancelarPeloAdmin(id);
       router.push(`/admin?dia=${props.inicial?.data ?? ""}`);

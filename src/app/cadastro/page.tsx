@@ -7,7 +7,8 @@ import { CadastroForm } from "./cadastro-form";
 export default async function Cadastro() {
   const user = await exigirUsuario();
   const [cliente] = await db.select().from(clientes).where(eq(clientes.userId, user.id));
-  const celularLogin = (user as { phoneNumber?: string | null }).phoneNumber ?? "";
+  // Quem entrou pelo código no e-mail (ou Google) já tem o e-mail confirmado: ele é o login e não muda aqui
+  const emailLogin = user.emailVerified && !user.email.endsWith(".local") ? user.email : "";
 
   return (
     <div className="mx-auto max-w-xl">
@@ -15,13 +16,15 @@ export default async function Cadastro() {
       <h1 className="mt-2 mb-8 text-[34px] font-bold leading-tight tracking-tight">Complete seu cadastro</h1>
       <CadastroForm
         inicial={
-          cliente ? { ...cliente, nomeCompleto: `${cliente.nome} ${cliente.sobrenome}`, createdAt: null } : {
-            nomeCompleto: user.name.startsWith("+") ? "" : user.name,
-            email: user.email.endsWith(".local") ? "" : user.email,
-            celular: celularLogin,
-          }
+          cliente
+            ? { ...cliente, nomeCompleto: `${cliente.nome} ${cliente.sobrenome}`, email: emailLogin || cliente.email, createdAt: null }
+            : {
+                // Conta criada pelo código no e-mail nasce sem nome (ou com o próprio e-mail)
+                nomeCompleto: !user.name || user.name.includes("@") || user.name.startsWith("+") ? "" : user.name,
+                email: emailLogin,
+              }
         }
-        celularFixo={Boolean(celularLogin)}
+        emailFixo={Boolean(emailLogin)}
       />
     </div>
   );

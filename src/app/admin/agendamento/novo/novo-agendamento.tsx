@@ -65,7 +65,8 @@ export function NovoAgendamento(props: Props) {
         <div className="col-span-6">
           <h2 className="text-[19px] font-semibold">Cadastro rápido</h2>
           <p className="text-[13px] text-graphite">
-            O cliente completa e-mail e endereço quando entrar no app com este celular.
+            Os avisos vão por WhatsApp. Quando o cliente criar a conta no app com o e-mail dele, informando este
+            CPF e celular, os horários marcados passam para a conta nova.
           </p>
         </div>
         <label className="col-span-6">
@@ -77,7 +78,7 @@ export function NovoAgendamento(props: Props) {
           <input className="input" inputMode="numeric" placeholder="000.000.000-00" value={novo.cpf} onChange={(e) => setNovo({ ...novo, cpf: mascaraCpf(e.target.value) })} />
         </label>
         <label className="col-span-3">
-          <span className="label">Celular (para lembretes)</span>
+          <span className="label">Celular (WhatsApp)</span>
           <input className="input" inputMode="tel" placeholder="(11) 91234-5678" value={novo.celular} onChange={(e) => setNovo({ ...novo, celular: mascaraCelular(e.target.value) })} />
         </label>
         {erro && <p className="col-span-6 text-[13px] text-red-400">{erro}</p>}

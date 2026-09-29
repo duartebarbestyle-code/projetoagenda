@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS clientes (
   cidade text,
   uf char(2),
   tipo text NOT NULL DEFAULT 'cliente' CHECK (tipo IN ('cliente', 'admin')),
-  aviso text NOT NULL DEFAULT 'sms' CHECK (aviso IN ('sms', 'email')), -- canal dos avisos de agendamento
+  aviso text NOT NULL DEFAULT 'email' CHECK (aviso IN ('email', 'whatsapp')), -- canal dos avisos de agendamento
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -141,9 +141,12 @@ BEGIN
   END IF;
 END $$;
 ALTER TABLE clientes ADD COLUMN IF NOT EXISTS tipo text NOT NULL DEFAULT 'cliente';
-ALTER TABLE clientes ADD COLUMN IF NOT EXISTS aviso text NOT NULL DEFAULT 'sms';
+ALTER TABLE clientes ADD COLUMN IF NOT EXISTS aviso text NOT NULL DEFAULT 'email';
+-- SMS saiu: quem escolheu SMS passa a receber pelo WhatsApp do mesmo celular
 ALTER TABLE clientes DROP CONSTRAINT IF EXISTS clientes_aviso_check;
-ALTER TABLE clientes ADD CONSTRAINT clientes_aviso_check CHECK (aviso IN ('sms', 'email'));
+UPDATE clientes SET aviso = 'whatsapp' WHERE aviso NOT IN ('email', 'whatsapp');
+ALTER TABLE clientes ALTER COLUMN aviso SET DEFAULT 'email';
+ALTER TABLE clientes ADD CONSTRAINT clientes_aviso_check CHECK (aviso IN ('email', 'whatsapp'));
 ALTER TABLE clientes ALTER COLUMN email DROP NOT NULL, ALTER COLUMN cep DROP NOT NULL, ALTER COLUMN rua DROP NOT NULL,
   ALTER COLUMN numero DROP NOT NULL, ALTER COLUMN bairro DROP NOT NULL, ALTER COLUMN cidade DROP NOT NULL,
   ALTER COLUMN uf DROP NOT NULL;

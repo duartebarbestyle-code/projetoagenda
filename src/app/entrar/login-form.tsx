@@ -3,18 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { mascaraCelular } from "@/lib/mascaras";
-
-function e164(valor: string) {
-  const d = valor.replace(/\D/g, "");
-  return d.length === 11 ? `+55${d}` : null;
-}
 
 export function LoginForm() {
   const router = useRouter();
-  const [celular, setCelular] = useState("");
+  const [email, setEmail] = useState("");
   const [codigo, setCodigo] = useState("");
-  const [etapa, setEtapa] = useState<"celular" | "codigo">("celular");
+  const [etapa, setEtapa] = useState<"email" | "codigo">("email");
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(false);
 
@@ -24,20 +18,22 @@ export function LoginForm() {
 
   async function enviarCodigo(e: React.FormEvent) {
     e.preventDefault();
-    const numero = e164(celular);
-    if (!numero) return setErro("Informe DDD + número (11 dígitos).");
+    const endereco = email.trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(endereco)) return setErro("Informe um e-mail válido.");
     setErro("");
     setCarregando(true);
-    const { error } = await authClient.phoneNumber.sendOtp({ phoneNumber: numero });
+    const { error } = await authClient.emailOtp.sendVerificationOtp({ email: endereco, type: "sign-in" });
     setCarregando(false);
     if (error) return setErro("Não foi possível enviar o código.");
+    setEmail(endereco);
+    setCodigo("");
     setEtapa("codigo");
   }
 
   async function verificar(e: React.FormEvent) {
     e.preventDefault();
     setCarregando(true);
-    const { error } = await authClient.phoneNumber.verify({ phoneNumber: e164(celular)!, code: codigo });
+    const { error } = await authClient.signIn.emailOtp({ email, otp: codigo });
     setCarregando(false);
     if (error) return setErro("Código inválido ou expirado.");
     router.push("/");
@@ -60,22 +56,26 @@ export function LoginForm() {
         <span className="h-px flex-1 bg-steel" /> ou <span className="h-px flex-1 bg-steel" />
       </div>
 
-      {etapa === "celular" ? (
+      {etapa === "email" ? (
         <form onSubmit={enviarCodigo} className="space-y-3">
-          <label className="label" htmlFor="celular">Celular</label>
+          <label className="label" htmlFor="email">E-mail</label>
           <input
-            id="celular"
+            id="email"
             className="input"
-            inputMode="tel"
-            placeholder="(11) 91234-5678"
-            value={celular}
-            onChange={(e) => setCelular(mascaraCelular(e.target.value))}
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            placeholder="voce@exemplo.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
-          <button className="btn-primary w-full" disabled={carregando}>Receber código por SMS</button>
+          <button className="btn-primary w-full" disabled={carregando}>
+            {carregando ? "Enviando..." : "Receber código por e-mail"}
+          </button>
         </form>
       ) : (
         <form onSubmit={verificar} className="space-y-3">
-          <label className="label" htmlFor="codigo">Código enviado para {celular}</label>
+          <label className="label" htmlFor="codigo">Código enviado para {email}</label>
           <input
             id="codigo"
             className="input tracking-[0.3em]"
@@ -85,8 +85,9 @@ export function LoginForm() {
             onChange={(e) => setCodigo(e.target.value.replace(/\D/g, ""))}
           />
           <button className="btn-primary w-full" disabled={carregando || codigo.length < 6}>Entrar</button>
-          <button type="button" className="text-[13px] text-graphite hover:text-signal" onClick={() => setEtapa("celular")}>
-            Trocar número
+          <p className="text-[13px] text-graphite">Não chegou? Veja a caixa de spam ou lixo eletrônico.</p>
+          <button type="button" className="text-[13px] text-graphite hover:text-signal" onClick={() => setEtapa("email")}>
+            Trocar e-mail
           </button>
         </form>
       )}

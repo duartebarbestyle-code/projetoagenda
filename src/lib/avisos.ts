@@ -7,13 +7,13 @@ import { enviarWhatsapp } from "./whatsapp";
 export type Tipo = "novo" | "cancelado" | "alterado" | "saiu";
 
 const TITULO: Record<Tipo, string> = {
-  novo: "📅 Novo agendamento",
-  cancelado: "❌ Agendamento cancelado",
-  alterado: "✏️ Agendamento alterado",
-  saiu: "↪️ Saiu da sua agenda",
+  novo: "novo agendamento",
+  cancelado: "agendamento cancelado",
+  alterado: "agendamento alterado",
+  saiu: "saiu da sua agenda",
 };
 
-// Avisa o barbeiro no WhatsApp. Falha no envio nunca impede o agendamento.
+// Avisa o barbeiro no WhatsApp (modelo aviso_barbeiro). Falha no envio nunca impede o agendamento.
 export async function avisarProfissional(
   tipo: Tipo,
   a: { profissionalId: number; servicoId: number; userId: string; inicio: Date },
@@ -26,13 +26,13 @@ export async function avisarProfissional(
       db.select({ nome: clientes.nome, sobrenome: clientes.sobrenome }).from(clientes).where(eq(clientes.userId, a.userId)),
     ]);
     if (!pro?.telefone) return;
-    const linhas = [
-      TITULO[tipo],
-      `${serv?.nome ?? "Atendimento"} · ${fmtData(a.inicio)} às ${fmtHora(a.inicio)}`,
-      `Cliente: ${cli ? `${cli.nome} ${cli.sobrenome}` : "—"}`,
-    ];
-    if (antes) linhas.push(`Antes: ${fmtData(antes)} às ${fmtHora(antes)}`);
-    await enviarWhatsapp(pro.telefone, linhas.join("\n"));
+    await enviarWhatsapp(pro.telefone, "aviso_barbeiro", [
+      antes ? `${TITULO[tipo]} (antes: ${fmtData(antes)} às ${fmtHora(antes)})` : TITULO[tipo],
+      serv?.nome ?? "Atendimento",
+      fmtData(a.inicio),
+      fmtHora(a.inicio),
+      cli ? `${cli.nome} ${cli.sobrenome}` : "-",
+    ]);
   } catch (e) {
     console.error("Falha no aviso ao profissional", e);
   }

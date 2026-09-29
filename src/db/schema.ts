@@ -74,7 +74,7 @@ export const clientes = pgTable("clientes", {
   cidade: text("cidade"),
   uf: char("uf", { length: 2 }),
   tipo: text("tipo", { enum: ["cliente", "admin"] }).notNull().default("cliente"),
-  aviso: text("aviso", { enum: ["sms", "email"] }).notNull().default("sms"),
+  aviso: text("aviso", { enum: ["email", "whatsapp"] }).notNull().default("email"),
   createdAt: ts("created_at").notNull().defaultNow(),
 });
 
